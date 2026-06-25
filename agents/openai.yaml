@@ -1,4 +1,4 @@
 interface:
   display_name: "Loop Adversarial Engineering"
-  short_description: "用生成-评估闭环驱动 Agent 完成复杂任务"
-  default_prompt: "Use $loop-adversarial-engineering to set up an adversarial generator/evaluator loop for this task."
+  short_description: "用强制 goal 和独立 generator/evaluator 闭环完成复杂任务"
+  default_prompt: "Use $loop-adversarial-engineering in mandatory goal mode: independent generator produces, independent evaluator reviews, and main only routes, merges, mechanically checks, and summarizes evidence."

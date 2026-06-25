@@ -1,14 +1,14 @@
 # Loop Adversarial Engineering
 
-A small Codex Skill for running complex Agent work as loop adversarial engineering.
+A small Agent Skill for running complex work through adversarial validation.
 
 The idea is simple:
 
 ```text
-goal -> generate -> evaluate -> revise -> evidence -> done
+goal -> independent generation -> independent evaluation -> integration -> evidence -> done
 ```
 
-One subagent generates or implements. Another subagent evaluates, reviews, tests, or attacks the result. The main agent owns the goal, reconciles findings, fixes confirmed issues, and stops only when there is evidence.
+One independent subagent generates or implements. Another independent subagent evaluates, reviews, tests, or attacks the result. The main agent owns orchestration: goal setup, handoff prompts, routing issues to the generator, applying or merging generator output, mechanical checks, evidence summary, and the final completion call. Main-thread implementation plus self-review is not this pattern when subagent tools are available.
 
 ## Why
 
@@ -20,8 +20,10 @@ Second, it is aligned with Anthropic's harness work for long-running app develop
 
 ## Principles
 
-- Default to goal mode when the current agent supports goals.
+- Use goal mode as the mandatory entry point. A todo list, local checklist, or written plan is not a substitute.
 - Keep each subagent single-purpose: one responsibility, one output, one validation surface.
+- Use independent generator and evaluator subagents whenever subagent tools are available; main-thread generation plus self-review is not adversarial validation.
+- Keep main out of production and evaluation when subagent tools are available; main routes work, applies or merges generator output, runs mechanical checks, and summarizes evidence.
 - Prefer real checks over verbal confidence.
 - Separate generation/implementation from evaluation, review, or integration testing.
 - Make the evaluator skeptical, concrete, and evidence-driven.
@@ -29,11 +31,18 @@ Second, it is aligned with Anthropic's harness work for long-running app develop
 
 ## Install
 
-Copy this folder into your Codex skills directory:
+Copy this folder into a skills directory:
 
 ```bash
 mkdir -p ~/.codex/skills
 cp -R loop-adversarial-engineering ~/.codex/skills/
+```
+
+For cross-runtime installs, `~/.agents/skills/` is also supported by many Agent runtimes:
+
+```bash
+mkdir -p ~/.agents/skills
+cp -R loop-adversarial-engineering ~/.agents/skills/
 ```
 
 Then invoke it with:
@@ -52,6 +61,14 @@ Natural-language triggers also work when the skill is discoverable:
 把这个设置成 goal：一个 subagent 生成/实现，另一个 evaluator review + 集成测试
 ```
 
+## When Not To Use
+
+Do not auto-trigger this skill for simple answers, low-risk formatting edits, pure brainstorming, or tasks where the user asks for a quick one-pass response. Explicit user invocation still takes priority.
+
+If goal tooling is unavailable or runtime policy blocks goal creation/update, stop and ask whether to continue without this skill.
+
+If subagent tools are available, both the generator and evaluator must be independent subagents. If subagent tools are unavailable, disclose the limitation before simulating roles as separate main-thread passes and state in final evidence that this was not a complete adversarial loop.
+
 ## Shell Driver
 
 Generate a reusable loop spec:
@@ -63,7 +80,7 @@ Generate a reusable loop spec:
 Set a different default round count:
 
 ```bash
-ROUNDS=1 ~/.codex/skills/loop-adversarial-engineering/scripts/loop_spec.sh "修复 bug 并验证"
+ROUNDS=2 ~/.codex/skills/loop-adversarial-engineering/scripts/loop_spec.sh "修复 bug 并验证"
 ```
 
 ## Files
