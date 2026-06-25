@@ -1,6 +1,6 @@
-# Generator Evaluator Loop
+# Loop Adversarial Engineering
 
-A small Codex Skill for running complex Agent work as a generator/evaluator feedback loop.
+A small Codex Skill for running complex Agent work as loop adversarial engineering.
 
 The idea is simple:
 
@@ -33,19 +33,19 @@ Copy this folder into your Codex skills directory:
 
 ```bash
 mkdir -p ~/.codex/skills
-cp -R generator-evaluator-loop ~/.codex/skills/
+cp -R loop-adversarial-engineering ~/.codex/skills/
 ```
 
 Then invoke it with:
 
 ```text
-Use $generator-evaluator-loop to run this task as a generator/evaluator loop.
+Use $loop-adversarial-engineering to run this task as an adversarial generator/evaluator loop.
 ```
 
 Natural-language triggers also work when the skill is discoverable:
 
 ```text
-开一个 generator/evaluator loop，把这个任务跑完
+开一个对抗 loop，把这个任务跑完
 ```
 
 ```text
@@ -57,13 +57,13 @@ Natural-language triggers also work when the skill is discoverable:
 Generate a reusable loop spec:
 
 ```bash
-~/.codex/skills/generator-evaluator-loop/scripts/loop_spec.sh "完成接口改造并验证"
+~/.codex/skills/loop-adversarial-engineering/scripts/loop_spec.sh "完成接口改造并验证"
 ```
 
 Set a different default round count:
 
 ```bash
-ROUNDS=1 ~/.codex/skills/generator-evaluator-loop/scripts/loop_spec.sh "修复 bug 并验证"
+ROUNDS=1 ~/.codex/skills/loop-adversarial-engineering/scripts/loop_spec.sh "修复 bug 并验证"
 ```
 
 ## Files

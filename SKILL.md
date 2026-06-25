@@ -1,9 +1,9 @@
 ---
-name: generator-evaluator-loop
-description: "Use when the user wants a generator/evaluator Agent loop: set a task as a goal, let one subagent generate or implement while another evaluates, reviews, integration-tests, or attacks the result, then iterate until evidence shows the goal is complete. Inspired by cybernetic feedback loops and Anthropic-style harness design. Trigger on \"generator evaluator\", \"开 loop\", \"对抗闭环\", \"loop engineering\", \"设置成 goal\", \"一个 subagent 干活另一个 review\", \"让另一个 agent 集成测试\", \"对抗地测试/找问题\", or \"跑完并验证\"."
+name: loop-adversarial-engineering
+description: "Use when the user wants loop adversarial engineering for Agent work: set a task as a goal, let one subagent generate or implement while another evaluates, reviews, integration-tests, or attacks the result, then iterate until evidence shows the goal is complete. Inspired by cybernetic feedback loops and Anthropic-style harness design. Trigger on \"generator evaluator\", \"开 loop\", \"对抗闭环\", \"loop engineering\", \"设置成 goal\", \"一个 subagent 干活另一个 review\", \"让另一个 agent 集成测试\", \"对抗地测试/找问题\", or \"跑完并验证\"."
 ---
 
-# Generator Evaluator Loop
+# Loop Adversarial Engineering
 
 ## Core Rule
 
@@ -30,7 +30,7 @@ Use this when verbal confidence is not enough and the task needs independent val
 Generate a loop spec from a task:
 
 ```bash
-~/.codex/skills/generator-evaluator-loop/scripts/loop_spec.sh "任务目标"
+~/.codex/skills/loop-adversarial-engineering/scripts/loop_spec.sh "任务目标"
 ```
 
 Use the generated generator/evaluator prompts directly when spawning subagents. If subagent tools are unavailable, run the same prompts as separate passes in the main thread.

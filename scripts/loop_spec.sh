@@ -11,7 +11,7 @@ if [[ -z "$goal" ]]; then
 fi
 
 cat <<EOF
-# Generator Evaluator Loop Spec
+# Loop Adversarial Engineering Spec
 
 ## Goal
 $goal
