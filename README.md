@@ -145,14 +145,16 @@ The evidence file uses a full `goal` object and does not require `goal.id`:
 }
 ```
 
-Routes are limited to `continue`, `complete`, and `blocked`. A `complete` goal must
-end with a final `complete` route, complete acceptance evidence, non-empty final
-generator/evaluator checks, generator artifacts, a generator summary, and no final
-blocking or important evaluator findings. Generator/evaluator checks and all
-finding items must be structured objects, not bare strings. The `recorder` must be
-`main` and must not claim to produce generator or evaluator output. If roles were
-simulated, set `complete_adversarial_loop` to `false` and include a statement
-saying the run was not a complete adversarial loop.
+Routes are limited to `continue`, `complete`, and `blocked`. `route=complete` is
+a completion claim: it may only appear on the final round, must be paired with
+`goal.status=complete`, and triggers full completion evidence validation. A
+completion claim requires complete acceptance evidence, non-empty final
+generator/evaluator checks, generator artifacts, a generator summary, and no
+final blocking or important evaluator findings. Generator/evaluator checks and
+all finding items must be structured objects, not bare strings. The `recorder`
+must be `main` and must not claim to produce generator or evaluator output. If
+roles were simulated, set `complete_adversarial_loop` to `false` and include a
+statement saying the run was not a complete adversarial loop.
 
 ## Files
 

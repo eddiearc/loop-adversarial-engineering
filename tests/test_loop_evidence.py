@@ -186,6 +186,60 @@ class LoopEvidenceCliTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("complete evidence", result.stderr)
 
+    def test_validate_fails_when_active_goal_claims_complete_route_with_empty_evidence(self):
+        payload = complete_evidence()
+        payload["goal"]["status"] = "active"
+        payload["rounds"][0]["generator"] = {
+            "summary": "",
+            "artifacts": [],
+            "checks": [],
+            "uncertainties": [],
+        }
+        payload["rounds"][0]["evaluator"] = {
+            "findings": {
+                "blocking": [],
+                "important": [],
+                "missing_evidence": [],
+                "residual_risk": [],
+            },
+            "checks": [],
+        }
+        payload["acceptance"] = []
+
+        result = run_cli("validate", write_evidence(payload))
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("route=complete requires goal.status=complete", result.stderr)
+        self.assertIn("complete evidence", result.stderr)
+
+    def test_validate_fails_when_complete_route_is_not_final_round(self):
+        payload = complete_evidence()
+        payload["rounds"].append(
+            {
+                "generator": {
+                    "summary": "Follow-up work after premature completion.",
+                    "artifacts": ["README.md"],
+                    "checks": [{"name": "python -m unittest", "result": "pass"}],
+                    "uncertainties": [],
+                },
+                "evaluator": {
+                    "findings": {
+                        "blocking": [],
+                        "important": [],
+                        "missing_evidence": [],
+                        "residual_risk": [],
+                    },
+                    "checks": [{"name": "loop-evidence validate", "result": "pass"}],
+                },
+                "route": "continue",
+            }
+        )
+
+        result = run_cli("validate", write_evidence(payload))
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("route=complete must only appear on the final round", result.stderr)
+
     def test_validate_fails_when_simulated_roles_do_not_disclose_incomplete_loop(self):
         payload = complete_evidence()
         payload["independence"] = {

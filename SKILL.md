@@ -77,14 +77,18 @@ loop-evidence validate evidence.json
 
 The evidence packet must use a full `goal` object with `objective`, `status`, and `codex_goal_used`. It must not require a synthetic local `goal.id`. Generator and evaluator outputs are structured JSON objects, while main/orchestrator only records evidence and selects one route: `continue`, `complete`, or `blocked`. The `recorder` object must identify `main` and must not claim to produce generator or evaluator output.
 
+`route=complete` is a completion claim. It may only appear on the final round, must be paired with `goal.status=complete`, and triggers the same final evidence checks as a complete goal status.
+
 Validation rejects completion when:
 
 - `goal.status` is not `active`, `complete`, or `blocked`.
 - A round lacks generator output or evaluator findings.
 - `recorder` is missing, is not `main`, or claims to produce generator/evaluator output.
+- `route=complete` appears before the final round.
+- `route=complete` appears while `goal.status` is not `complete`.
 - `goal.status` is `complete` but the final route is not `complete`.
-- `goal.status` is `complete` but final generator/evaluator evidence is incomplete.
-- `goal.status` is `complete` and final evaluator findings contain blocking or important items.
+- Completion is claimed by either `goal.status=complete` or final `route=complete`, but final generator/evaluator evidence is incomplete.
+- Completion is claimed and final evaluator findings contain blocking or important items.
 - Generator/evaluator checks or finding items are bare strings instead of structured objects.
 - Roles were simulated, but the evidence claims a complete adversarial loop or does not explicitly state the run was not a complete adversarial loop.
 

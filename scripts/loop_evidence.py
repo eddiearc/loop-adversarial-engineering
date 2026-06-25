@@ -155,6 +155,7 @@ def validate_evidence(payload):
             errors.append("recorder must not produce evaluator output")
 
     rounds = payload.get("rounds")
+    complete_route_indexes = []
     if require_list(errors, rounds, "rounds"):
         if not rounds:
             errors.append("rounds must contain at least one round")
@@ -179,6 +180,8 @@ def validate_evidence(payload):
             route = round_payload.get("route")
             if route not in VALID_ROUTES:
                 errors.append(f"{round_path}.route must be continue, complete, or blocked")
+            elif route == "complete":
+                complete_route_indexes.append(index)
             if finding_count(findings, "blocking") or finding_count(findings, "important"):
                 if route not in {"continue", "blocked"}:
                     errors.append(
@@ -190,10 +193,24 @@ def validate_evidence(payload):
     require_list(errors, acceptance, "acceptance")
 
     goal_status = goal.get("status") if isinstance(goal, dict) else None
-    if goal_status == "complete" and isinstance(rounds, list) and rounds:
+    if isinstance(rounds, list) and rounds:
         final_round = rounds[-1] if isinstance(rounds[-1], dict) else {}
-        if final_round.get("route") != "complete":
+        final_route = final_round.get("route")
+        for index in complete_route_indexes:
+            if index != len(rounds) - 1:
+                errors.append(
+                    f"rounds[{index}].route=complete must only appear on the final round"
+                )
+        if complete_route_indexes and goal_status != "complete":
+            errors.append("route=complete requires goal.status=complete")
+        if goal_status == "complete" and final_route != "complete":
             errors.append("goal.status=complete requires final route to be complete")
+        completion_claimed = goal_status == "complete" or final_route == "complete"
+    else:
+        completion_claimed = goal_status == "complete"
+
+    if completion_claimed and isinstance(rounds, list) and rounds:
+        final_round = rounds[-1] if isinstance(rounds[-1], dict) else {}
         final_evaluator = final_round.get("evaluator")
         final_findings = (
             final_evaluator.get("findings") if isinstance(final_evaluator, dict) else None
