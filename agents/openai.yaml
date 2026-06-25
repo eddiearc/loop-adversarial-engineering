@@ -1,4 +1,4 @@
 interface:
-  display_name: "Loop Adversarial Engineering"
-  short_description: "用对抗闭环驱动 Agent 完成复杂任务"
-  default_prompt: "Use $loop-adversarial-engineering to set up an implementation, review, and integration-test loop for this task."
+  display_name: "Generator Evaluator Loop"
+  short_description: "用生成-评估闭环驱动 Agent 完成复杂任务"
+  default_prompt: "Use $generator-evaluator-loop to set up a generator, evaluator, and validation loop for this task."
