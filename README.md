@@ -83,10 +83,83 @@ Set a different default round count:
 ROUNDS=2 ~/.codex/skills/loop-adversarial-engineering/scripts/loop_spec.sh "修复 bug 并验证"
 ```
 
+## Evidence Validator
+
+v1 includes a small evidence template and validator. It does not create Codex goals,
+spawn subagents, wait for agents, or run a DAG workflow. The main/orchestrator records
+evidence produced by the generator and evaluator.
+
+Create a template:
+
+```bash
+loop-evidence init "Improve loop-adversarial-engineering skill" > evidence.json
+```
+
+Validate evidence:
+
+```bash
+loop-evidence validate evidence.json
+```
+
+The evidence file uses a full `goal` object and does not require `goal.id`:
+
+```json
+{
+  "goal": {
+    "objective": "Improve loop-adversarial-engineering skill",
+    "status": "active",
+    "codex_goal_used": true
+  },
+  "independence": {
+    "subagent_tools_available": true,
+    "roles_simulated": false,
+    "complete_adversarial_loop": true,
+    "statement": ""
+  },
+  "recorder": {
+    "role": "main",
+    "produced_generator_output": false,
+    "produced_evaluator_output": false
+  },
+  "rounds": [
+    {
+      "generator": {
+        "summary": "",
+        "artifacts": [],
+        "checks": [],
+        "uncertainties": []
+      },
+      "evaluator": {
+        "findings": {
+          "blocking": [],
+          "important": [],
+          "missing_evidence": [],
+          "residual_risk": []
+        },
+        "checks": []
+      },
+      "route": "continue"
+    }
+  ],
+  "acceptance": []
+}
+```
+
+Routes are limited to `continue`, `complete`, and `blocked`. A `complete` goal must
+end with a final `complete` route, complete acceptance evidence, non-empty final
+generator/evaluator checks, generator artifacts, a generator summary, and no final
+blocking or important evaluator findings. Generator/evaluator checks and all
+finding items must be structured objects, not bare strings. The `recorder` must be
+`main` and must not claim to produce generator or evaluator output. If roles were
+simulated, set `complete_adversarial_loop` to `false` and include a statement
+saying the run was not a complete adversarial loop.
+
 ## Files
 
 ```text
 SKILL.md                  # Codex skill instructions
 agents/openai.yaml        # UI metadata
 scripts/loop_spec.sh      # Shell generator for loop specs
+scripts/loop-evidence     # v1 evidence template and validator CLI
+loop-evidence             # Repo-root wrapper for the validator CLI
 ```

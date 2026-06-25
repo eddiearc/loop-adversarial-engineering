@@ -66,6 +66,28 @@ Generate a loop spec from a task:
 
 Use the generated generator/evaluator prompts directly when spawning subagents. If subagent tools are available, both prompts must be run by independent subagents. If subagent tools are unavailable, run the same prompts as separate passes in the main thread only after disclosing the limitation and final evidence must state this was not a complete adversarial loop.
 
+## Evidence Validator
+
+Use `loop-evidence` to create and validate v1 loop evidence packets:
+
+```bash
+loop-evidence init "Improve loop-adversarial-engineering skill" > evidence.json
+loop-evidence validate evidence.json
+```
+
+The evidence packet must use a full `goal` object with `objective`, `status`, and `codex_goal_used`. It must not require a synthetic local `goal.id`. Generator and evaluator outputs are structured JSON objects, while main/orchestrator only records evidence and selects one route: `continue`, `complete`, or `blocked`. The `recorder` object must identify `main` and must not claim to produce generator or evaluator output.
+
+Validation rejects completion when:
+
+- `goal.status` is not `active`, `complete`, or `blocked`.
+- A round lacks generator output or evaluator findings.
+- `recorder` is missing, is not `main`, or claims to produce generator/evaluator output.
+- `goal.status` is `complete` but the final route is not `complete`.
+- `goal.status` is `complete` but final generator/evaluator evidence is incomplete.
+- `goal.status` is `complete` and final evaluator findings contain blocking or important items.
+- Generator/evaluator checks or finding items are bare strings instead of structured objects.
+- Roles were simulated, but the evidence claims a complete adversarial loop or does not explicitly state the run was not a complete adversarial loop.
+
 ## Prompts
 
 Generator prompt contract:
