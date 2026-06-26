@@ -31,7 +31,7 @@ Do not auto-trigger for simple answers, low-risk formatting edits, pure brainsto
 3. Separate roles:
    - `generator`: implement, draft, or produce the artifact.
    - `evaluator`: find blocking issues, important issues, missing evidence, and residual risk.
-   - `main`: define the goal, spawn roles, reconcile outputs, integrate accepted changes, and make the final completion call.
+   - `main`: orchestrate the loop, integrate accepted generator output, run mechanical checks, record evidence, and make the final completion call.
 4. If subagent tools are available, both generator and evaluator must be independent subagents. The main agent must not act as the generator, must not act as the evaluator, and must not label main-thread generation plus self-review as a loop.
 5. Keep each role single-purpose: one responsibility, one output, one validation surface. Split broad work instead of mixing implementation, review, testing, and planning.
 6. Run 1 evaluator round by default. Run a second round when the first round finds important issues or the task is high risk. Continue past 2 rounds only when new blocking evidence appears and each round is still producing concrete improvements.
@@ -39,7 +39,9 @@ Do not auto-trigger for simple answers, low-risk formatting edits, pure brainsto
 
 ## Role Independence Contract
 
-- `main` owns orchestration only: goal setup, scope, handoff prompts, reconciliation, final evidence, and stop/continue decisions.
+- `main` is the orchestrator + integrator: goal setup, scope, handoff prompts, reconciliation, applying or merging accepted generator output, mechanical checks, final evidence, and stop/continue decisions.
+- `main` may perform integration mechanics such as applying patches, resolving merge conflicts, running formatters/tests, copying generated artifacts, or wiring generated output into the workspace.
+- `main` must not originate the substantive artifact, produce generator output, make evaluator judgments, or call its own main-thread work adversarial validation.
 - `generator` owns production only: make the smallest sufficient change or artifact, report changed files and checks, and avoid judging final completeness.
 - `evaluator` owns pressure-testing only: re-read the goal, inspect the result, run real checks where possible, and report issues or "no issue" with evidence.
 - When subagent tools exist, a loop is invalid unless generation and evaluation are performed by separate subagents. If the current agent is assigned the `generator` role, it must not perform evaluator duties in the same pass.
@@ -54,7 +56,7 @@ Do not auto-trigger for simple answers, low-risk formatting edits, pure brainsto
 | Goal tooling is available | Inspect the current goal; create or update an aligned goal before generation. |
 | Goal tooling is unavailable or blocked by runtime policy | Stop, report that mandatory goal mode is unavailable, and ask whether to continue without this skill. |
 | Evaluator reports only residual risk | Stop after documenting risk and evidence. |
-| Evaluator finds blocking or important issues | Main routes issues to an independent generator for fixes, applies or merges generator output, runs mechanical checks only, then routes one targeted re-evaluation. |
+| Evaluator finds blocking or important issues | Main routes issues to an independent generator for fixes, integrates accepted generator output, runs mechanical checks only, then routes one targeted re-evaluation. |
 
 ## Code Driver
 
@@ -73,6 +75,7 @@ Use `loop-evidence` to create and validate v1 loop evidence packets:
 ```bash
 loop-evidence init "Improve loop-adversarial-engineering skill" > evidence.json
 loop-evidence validate evidence.json
+loop-evidence init "Improve loop-adversarial-engineering skill" | loop-evidence validate -
 ```
 
 The evidence packet must use a full `goal` object with `objective`, `status`, and `codex_goal_used`. It must not require a synthetic local `goal.id`. Generator and evaluator outputs are structured JSON objects, while main/orchestrator only records evidence and selects one route: `continue`, `complete`, or `blocked`. The `recorder` object must identify `main` and must not claim to produce generator or evaluator output.

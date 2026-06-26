@@ -246,6 +246,8 @@ def validate_evidence(payload):
 
 
 def load_json(path):
+    if path == "-":
+        return json.load(sys.stdin)
     with open(path, "r", encoding="utf-8") as handle:
         return json.load(handle)
 
@@ -282,7 +284,7 @@ def build_parser():
     init_parser.set_defaults(func=cmd_init)
 
     validate_parser = subparsers.add_parser("validate", help="validate a v1 evidence file")
-    validate_parser.add_argument("path")
+    validate_parser.add_argument("path", help="path to evidence JSON, or '-' to read stdin")
     validate_parser.set_defaults(func=cmd_validate)
 
     return parser

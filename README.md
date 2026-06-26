@@ -95,10 +95,16 @@ Create a template:
 loop-evidence init "Improve loop-adversarial-engineering skill" > evidence.json
 ```
 
-Validate evidence:
+Validate evidence from a file:
 
 ```bash
 loop-evidence validate evidence.json
+```
+
+Validate evidence from stdin:
+
+```bash
+loop-evidence init "Improve loop-adversarial-engineering skill" | loop-evidence validate -
 ```
 
 The evidence file uses a full `goal` object and does not require `goal.id`:

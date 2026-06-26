@@ -106,6 +106,19 @@ class LoopEvidenceCliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("valid", result.stdout)
 
+    def test_validate_reads_stdin_when_path_is_dash(self):
+        result = subprocess.run(
+            [str(CLI), "validate", "-"],
+            cwd=ROOT,
+            input=json.dumps(complete_evidence()),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("valid", result.stdout)
+
     def test_validate_fails_when_goal_objective_missing(self):
         payload = complete_evidence()
         del payload["goal"]["objective"]

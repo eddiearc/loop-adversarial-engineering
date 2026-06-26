@@ -35,16 +35,17 @@ A todo list, local checklist, or written plan is not a substitute for goal mode.
 If goal tooling is unavailable or runtime policy blocks goal creation/update, stop and ask whether to continue without this skill.
 
 ## Role Independence Policy
-- Main owns orchestration only: goal setup, scope, handoff prompts, routing issues to generator, applying or merging generator output, running mechanical checks, final evidence, and stop/continue decisions.
+- Main is the orchestrator + integrator: goal setup, scope, handoff prompts, routing issues to generator, applying or merging accepted generator output, running mechanical checks, final evidence, and stop/continue decisions.
 - Generator owns production only: implement, draft, or produce the requested artifact.
 - Evaluator owns pressure-testing only: inspect the result against the goal and run real checks where possible.
-- Main must not produce artifacts and must not make evaluator judgments. Main may only summarize evaluator findings and mechanical check results.
+- Main may perform integration mechanics such as applying patches, resolving merge conflicts, running formatters/tests, copying generated artifacts, or wiring generated output into the workspace.
+- Main must not originate the substantive artifact, produce generator output, or make evaluator judgments. Main may only summarize evaluator findings and mechanical check results.
 - If subagent tools are available, main must spawn independent generator and evaluator subagents. Main-thread generation plus self-review does not count as this loop.
 
 ## Loop
 1. If subagent tools are available, an independent generator subagent produces the smallest complete solution or artifact.
 2. If subagent tools are available, an independent evaluator subagent attacks the result with real checks where possible. Main-thread generation plus self-review does not count as adversarial validation.
-3. Main agent routes confirmed issues back to an independent generator pass, applies or merges generator output, runs mechanical checks, and summarizes evidence. Main must not produce artifacts or make evaluator judgments.
+3. Main agent routes confirmed issues back to an independent generator pass, integrates accepted generator output, runs mechanical checks, and summarizes evidence. Main must not originate the substantive artifact or make evaluator judgments.
 4. Stop after $rounds full evaluator round(s), unless new blocking evidence appears and another round is likely to produce concrete improvement.
 
 ## Subagent Scope Rule
