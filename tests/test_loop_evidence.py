@@ -119,6 +119,22 @@ class LoopEvidenceCliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("valid", result.stdout)
 
+    def test_init_template_validates_from_stdin(self):
+        init_result = run_cli("init", "x")
+        self.assertEqual(init_result.returncode, 0, init_result.stderr)
+
+        validate_result = subprocess.run(
+            [str(CLI), "validate", "-"],
+            cwd=ROOT,
+            input=init_result.stdout,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        self.assertEqual(validate_result.returncode, 0, validate_result.stderr)
+        self.assertIn("valid", validate_result.stdout)
+
     def test_validate_fails_when_goal_objective_missing(self):
         payload = complete_evidence()
         del payload["goal"]["objective"]
@@ -136,6 +152,24 @@ class LoopEvidenceCliTests(unittest.TestCase):
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("goal.status", result.stderr)
+
+    def test_validate_fails_when_codex_goal_used_is_missing(self):
+        payload = complete_evidence()
+        del payload["goal"]["codex_goal_used"]
+
+        result = run_cli("validate", write_evidence(payload))
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("goal.codex_goal_used", result.stderr)
+
+    def test_validate_fails_when_codex_goal_used_is_false(self):
+        payload = complete_evidence()
+        payload["goal"]["codex_goal_used"] = False
+
+        result = run_cli("validate", write_evidence(payload))
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("goal.codex_goal_used", result.stderr)
 
     def test_validate_fails_when_round_missing_generator(self):
         payload = complete_evidence()
@@ -174,6 +208,17 @@ class LoopEvidenceCliTests(unittest.TestCase):
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("blocking or important", result.stderr)
+
+    def test_validate_fails_when_complete_goal_has_missing_evidence_findings(self):
+        payload = complete_evidence()
+        payload["rounds"][0]["evaluator"]["findings"]["missing_evidence"] = [
+            {"summary": "No validator command output was recorded"}
+        ]
+
+        result = run_cli("validate", write_evidence(payload))
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("missing evidence", result.stderr)
 
     def test_validate_fails_when_complete_goal_has_empty_final_evidence_template(self):
         payload = complete_evidence()
@@ -225,6 +270,59 @@ class LoopEvidenceCliTests(unittest.TestCase):
         self.assertIn("route=complete requires goal.status=complete", result.stderr)
         self.assertIn("complete evidence", result.stderr)
 
+    def test_validate_fails_when_complete_goal_has_blank_artifact_entry(self):
+        payload = complete_evidence()
+        payload["rounds"][0]["generator"]["artifacts"] = ["   "]
+
+        result = run_cli("validate", write_evidence(payload))
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("rounds[-1].generator.artifacts[0]", result.stderr)
+
+    def test_validate_fails_when_complete_goal_has_blank_acceptance_entry(self):
+        payload = complete_evidence()
+        payload["acceptance"] = ["\t"]
+
+        result = run_cli("validate", write_evidence(payload))
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("acceptance[0]", result.stderr)
+
+    def test_validate_fails_when_complete_goal_has_invalid_scalar_artifacts(self):
+        for artifact in (False, 0, {"path": False}, {"path": 0}):
+            with self.subTest(artifact=artifact):
+                payload = complete_evidence()
+                payload["rounds"][0]["generator"]["artifacts"] = [artifact]
+
+                result = run_cli("validate", write_evidence(payload))
+
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("rounds[-1].generator.artifacts[0]", result.stderr)
+
+    def test_validate_fails_when_complete_goal_has_invalid_scalar_acceptance(self):
+        for acceptance in (False, 0, {"check": False}, {"check": 0}):
+            with self.subTest(acceptance=acceptance):
+                payload = complete_evidence()
+                payload["acceptance"] = [acceptance]
+
+                result = run_cli("validate", write_evidence(payload))
+
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("acceptance[0]", result.stderr)
+
+    def test_validate_accepts_structured_completion_artifacts_and_acceptance(self):
+        payload = complete_evidence()
+        payload["rounds"][0]["generator"]["artifacts"] = [
+            {"path": "scripts/loop_evidence.py"}
+        ]
+        payload["acceptance"] = [
+            {"check": "python3 -m unittest discover -v", "result": "pass"}
+        ]
+
+        result = run_cli("validate", write_evidence(payload))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_validate_fails_when_complete_route_is_not_final_round(self):
         payload = complete_evidence()
         payload["rounds"].append(
@@ -265,6 +363,58 @@ class LoopEvidenceCliTests(unittest.TestCase):
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("not a complete adversarial loop", result.stderr)
+
+    def test_validate_fails_when_subagent_tools_available_is_missing(self):
+        payload = complete_evidence()
+        del payload["independence"]["subagent_tools_available"]
+
+        result = run_cli("validate", write_evidence(payload))
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("subagent_tools_available", result.stderr)
+
+    def test_validate_fails_when_subagent_tools_available_is_not_boolean(self):
+        payload = complete_evidence()
+        payload["independence"]["subagent_tools_available"] = "yes"
+
+        result = run_cli("validate", write_evidence(payload))
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("subagent_tools_available", result.stderr)
+
+    def test_validate_fails_when_tools_unavailable_claim_complete_loop(self):
+        payload = complete_evidence()
+        payload["goal"]["status"] = "blocked"
+        payload["rounds"][0]["route"] = "blocked"
+        payload["independence"] = {
+            "subagent_tools_available": False,
+            "roles_simulated": False,
+            "complete_adversarial_loop": True,
+        }
+
+        result = run_cli("validate", write_evidence(payload))
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("complete_adversarial_loop", result.stderr)
+
+    def test_validate_fails_completion_when_adversarial_loop_is_incomplete(self):
+        payload = complete_evidence()
+        payload["independence"]["complete_adversarial_loop"] = False
+
+        result = run_cli("validate", write_evidence(payload))
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("complete_adversarial_loop", result.stderr)
+
+    def test_validate_allows_blocked_route_when_adversarial_loop_is_incomplete(self):
+        payload = complete_evidence()
+        payload["goal"]["status"] = "blocked"
+        payload["rounds"][0]["route"] = "blocked"
+        payload["independence"]["complete_adversarial_loop"] = False
+
+        result = run_cli("validate", write_evidence(payload))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_validate_fails_when_simulated_roles_claim_complete_loop_even_with_tools(self):
         payload = complete_evidence()

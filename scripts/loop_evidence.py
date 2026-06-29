@@ -17,7 +17,7 @@ def evidence_template(objective):
             "codex_goal_used": True,
         },
         "independence": {
-            "subagent_tools_available": None,
+            "subagent_tools_available": False,
             "roles_simulated": False,
             "complete_adversarial_loop": False,
             "statement": "",
@@ -55,6 +55,16 @@ def is_nonempty_string(value):
     return isinstance(value, str) and bool(value.strip())
 
 
+def has_evidence_content(value):
+    if isinstance(value, str):
+        return is_nonempty_string(value)
+    if isinstance(value, dict):
+        return bool(value) and any(has_evidence_content(item) for item in value.values())
+    if isinstance(value, list):
+        return bool(value) and any(has_evidence_content(item) for item in value)
+    return False
+
+
 def require_object(errors, value, path):
     if not isinstance(value, dict):
         errors.append(f"{path} must be an object")
@@ -72,6 +82,17 @@ def require_list(errors, value, path):
 def require_nonempty_list(errors, value, path):
     if require_list(errors, value, path) and not value:
         errors.append(f"{path} must contain complete evidence")
+
+
+def require_nonempty_evidence_list(errors, value, path):
+    if not require_list(errors, value, path):
+        return
+    if not value:
+        errors.append(f"{path} must contain complete evidence")
+        return
+    for index, item in enumerate(value):
+        if not has_evidence_content(item):
+            errors.append(f"{path}[{index}] must contain complete evidence")
 
 
 def require_structured_entries(errors, value, path, required_fields):
@@ -128,13 +149,25 @@ def validate_evidence(payload):
             errors.append("goal.objective is required")
         if goal.get("status") not in VALID_GOAL_STATUSES:
             errors.append("goal.status must be active, complete, or blocked")
+        if goal.get("codex_goal_used") is not True:
+            errors.append("goal.codex_goal_used must be true")
 
     independence = payload.get("independence")
     if require_object(errors, independence, "independence"):
+        if not isinstance(independence.get("subagent_tools_available"), bool):
+            errors.append("independence.subagent_tools_available must be a boolean")
         if not isinstance(independence.get("roles_simulated"), bool):
             errors.append("independence.roles_simulated must be a boolean")
         if not isinstance(independence.get("complete_adversarial_loop"), bool):
             errors.append("independence.complete_adversarial_loop must be a boolean")
+        if (
+            independence.get("subagent_tools_available") is False
+            and independence.get("complete_adversarial_loop") is not False
+        ):
+            errors.append(
+                "independence.complete_adversarial_loop must be false when "
+                "subagent_tools_available is false"
+            )
         if independence.get("roles_simulated") is True:
             statement = independence.get("statement", "")
             if independence.get("complete_adversarial_loop") is not False or (
@@ -219,18 +252,18 @@ def validate_evidence(payload):
         if isinstance(final_generator, dict):
             if not is_nonempty_string(final_generator.get("summary")):
                 errors.append("goal.status=complete requires complete evidence in final generator summary")
-            require_nonempty_list(
+            require_nonempty_evidence_list(
                 errors,
                 final_generator.get("artifacts"),
                 "rounds[-1].generator.artifacts",
             )
-            require_nonempty_list(
+            require_nonempty_evidence_list(
                 errors,
                 final_generator.get("checks"),
                 "rounds[-1].generator.checks",
             )
         if isinstance(final_evaluator, dict):
-            require_nonempty_list(
+            require_nonempty_evidence_list(
                 errors,
                 final_evaluator.get("checks"),
                 "rounds[-1].evaluator.checks",
@@ -239,8 +272,15 @@ def validate_evidence(payload):
             errors.append(
                 "goal.status=complete requires no final blocking or important findings"
             )
-        if not isinstance(acceptance, list) or not acceptance:
-            errors.append("goal.status=complete requires acceptance evidence")
+        if finding_count(final_findings, "missing_evidence"):
+            errors.append(
+                "goal.status=complete requires no final missing evidence findings"
+            )
+        if isinstance(independence, dict) and independence.get("complete_adversarial_loop") is not True:
+            errors.append(
+                "goal.status=complete requires independence.complete_adversarial_loop=true"
+            )
+        require_nonempty_evidence_list(errors, acceptance, "acceptance")
 
     return errors
 

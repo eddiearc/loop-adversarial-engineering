@@ -92,20 +92,25 @@ evidence produced by the generator and evaluator.
 Create a template:
 
 ```bash
-loop-evidence init "Improve loop-adversarial-engineering skill" > evidence.json
+./loop-evidence init "Improve loop-adversarial-engineering skill" > evidence.json
 ```
 
 Validate evidence from a file:
 
 ```bash
-loop-evidence validate evidence.json
+./loop-evidence validate evidence.json
 ```
 
 Validate evidence from stdin:
 
 ```bash
-loop-evidence init "Improve loop-adversarial-engineering skill" | loop-evidence validate -
+./loop-evidence init "Improve loop-adversarial-engineering skill" | ./loop-evidence validate -
 ```
+
+After copying the skill into `~/.codex/skills`, use the installed path
+`~/.codex/skills/loop-adversarial-engineering/scripts/loop-evidence`. To use the
+bare `loop-evidence` command, add a wrapper to your `PATH` or create your own
+symlink.
 
 The evidence file uses a full `goal` object and does not require `goal.id`:
 
@@ -154,13 +159,16 @@ The evidence file uses a full `goal` object and does not require `goal.id`:
 Routes are limited to `continue`, `complete`, and `blocked`. `route=complete` is
 a completion claim: it may only appear on the final round, must be paired with
 `goal.status=complete`, and triggers full completion evidence validation. A
-completion claim requires complete acceptance evidence, non-empty final
-generator/evaluator checks, generator artifacts, a generator summary, and no
-final blocking or important evaluator findings. Generator/evaluator checks and
-all finding items must be structured objects, not bare strings. The `recorder`
-must be `main` and must not claim to produce generator or evaluator output. If
-roles were simulated, set `complete_adversarial_loop` to `false` and include a
-statement saying the run was not a complete adversarial loop.
+completion claim requires `goal.codex_goal_used=true`, complete acceptance
+evidence, non-empty final generator/evaluator checks, generator artifacts, a
+generator summary, no final blocking/important/missing-evidence evaluator
+findings, and `independence.complete_adversarial_loop=true`. Generator/evaluator
+checks and all finding items must be structured objects, not bare strings.
+Final artifacts and acceptance entries must contain non-blank text or valid
+structured content. The `recorder` must be `main` and must not claim to produce
+generator or evaluator output. If subagent tools were unavailable or roles were
+simulated, set `complete_adversarial_loop` to `false`; simulated roles must also
+include a statement saying the run was not a complete adversarial loop.
 
 ## Files
 

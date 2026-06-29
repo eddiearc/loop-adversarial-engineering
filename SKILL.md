@@ -70,13 +70,18 @@ Use the generated generator/evaluator prompts directly when spawning subagents. 
 
 ## Evidence Validator
 
-Use `loop-evidence` to create and validate v1 loop evidence packets:
+Use the repo wrapper to create and validate v1 loop evidence packets:
 
 ```bash
-loop-evidence init "Improve loop-adversarial-engineering skill" > evidence.json
-loop-evidence validate evidence.json
-loop-evidence init "Improve loop-adversarial-engineering skill" | loop-evidence validate -
+./loop-evidence init "Improve loop-adversarial-engineering skill" > evidence.json
+./loop-evidence validate evidence.json
+./loop-evidence init "Improve loop-adversarial-engineering skill" | ./loop-evidence validate -
 ```
+
+After installing this skill, use
+`~/.codex/skills/loop-adversarial-engineering/scripts/loop-evidence`. To use the
+bare `loop-evidence` command, add a wrapper to your `PATH` or create your own
+symlink.
 
 The evidence packet must use a full `goal` object with `objective`, `status`, and `codex_goal_used`. It must not require a synthetic local `goal.id`. Generator and evaluator outputs are structured JSON objects, while main/orchestrator only records evidence and selects one route: `continue`, `complete`, or `blocked`. The `recorder` object must identify `main` and must not claim to produce generator or evaluator output.
 
@@ -90,9 +95,14 @@ Validation rejects completion when:
 - `route=complete` appears before the final round.
 - `route=complete` appears while `goal.status` is not `complete`.
 - `goal.status` is `complete` but the final route is not `complete`.
+- `goal.codex_goal_used` is missing or is not `true`.
 - Completion is claimed by either `goal.status=complete` or final `route=complete`, but final generator/evaluator evidence is incomplete.
-- Completion is claimed and final evaluator findings contain blocking or important items.
+- Completion is claimed and final evaluator findings contain blocking, important, or missing-evidence items.
+- Completion is claimed while `independence.complete_adversarial_loop` is not `true`.
+- `subagent_tools_available` is missing or is not a boolean.
+- `subagent_tools_available=false`, but `complete_adversarial_loop` is not `false`.
 - Generator/evaluator checks or finding items are bare strings instead of structured objects.
+- Final generator artifacts or acceptance entries are blank strings or empty structures.
 - Roles were simulated, but the evidence claims a complete adversarial loop or does not explicitly state the run was not a complete adversarial loop.
 
 ## Prompts
